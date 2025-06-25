@@ -29,26 +29,76 @@ export async function findFile(searchPath: string, fileName: string) {
 export async function checkProjectType(path: string): Promise<ProjectType> {
     const tsconfig = await findFile(path, 'tsconfig.json');
     const jsconfig = await findFile(path, 'jsconfig.json');
-    const svelteVersion = await getSvelteVersionFromPackageJson();
+    const svelteVersion = await getVersionFromPackageJson('svelte');
     const isSv5Plus = isSvelte5Plus(svelteVersion);
+
+    const svelteKitVersion = await getVersionFromPackageJson('@sveltejs/kit');
+    // Props were introduced in 2.16.0 https://github.com/sveltejs/kit/blob/main/packages/kit/CHANGELOG.md#2160
+    const withProps = versionAtLeast(svelteKitVersion, 2, { minor: 16, defaultReturn: true });
+
     const isTs = !!tsconfig && (!jsconfig || tsconfig.length >= jsconfig.length);
+    let withSatisfies = false;
     if (isTs) {
         try {
             const packageJSONPath = require.resolve('typescript/package.json', {
                 paths: [tsconfig]
             });
-            const { version } = require(packageJSONPath);
-            const [major, minor] = version.split('.');
-            if ((Number(major) === 4 && Number(minor) >= 9) || Number(major) > 4) {
-                return isSv5Plus ? ProjectType.TS_SATISFIES_SV5 : ProjectType.TS_SATISFIES;
-            } else {
-                return isSv5Plus ? ProjectType.TS_SV5 : ProjectType.TS;
-            }
-        } catch (e) {
-            return isSv5Plus ? ProjectType.TS_SV5 : ProjectType.TS;
-        }
-    } else {
-        return isSv5Plus ? ProjectType.JS_SV5 : ProjectType.JS;
+            const { version: typescriptVersion } = require(packageJSONPath);
+            // Satisfies was introduced in 4.9
+            withSatisfies = versionAtLeast(typescriptVersion, 4, { minor: 9, defaultReturn: true });
+        } catch (e) {}
+    }
+
+    // Let's manage all cases now
+    if (isTs && !withSatisfies && isSv5Plus && withProps) {
+        return ProjectType.TS_SV5_PROPS;
+    }
+    if (isTs && withSatisfies && isSv5Plus && withProps) {
+        return ProjectType.TS_SATISFIES_SV5_PROPS;
+    }
+    if (!isTs && isSv5Plus && withProps) {
+        return ProjectType.TS_SV5_PROPS;
+    }
+    if (isTs && !withSatisfies && isSv5Plus && !withProps) {
+        return ProjectType.TS_SV5;
+    }
+    if (isTs && withSatisfies && isSv5Plus && !withProps) {
+        return ProjectType.TS_SATISFIES_SV5;
+    }
+    if (!isTs && isSv5Plus && !withProps) {
+        return ProjectType.JS_SV5;
+    }
+    if (isTs && !withSatisfies && !isSv5Plus) {
+        return ProjectType.TS;
+    }
+    if (isTs && withSatisfies && !isSv5Plus) {
+        return ProjectType.TS_SATISFIES;
+    }
+    return ProjectType.JS;
+}
+
+function versionAtLeast(
+    version: string | undefined,
+    major: number,
+    o?: {
+        minor?: number;
+        defaultReturn?: boolean;
+    }
+): boolean {
+    const { minor = 0, defaultReturn = false } = o ?? {};
+
+    if (!version) {
+        return defaultReturn;
+    }
+
+    try {
+        const [majorVersion, minorVersion] = version.split('.');
+        return (
+            (Number(majorVersion) === major && Number(minorVersion) >= (minor ?? 0)) ||
+            Number(majorVersion) > major
+        );
+    } catch (e) {
+        return defaultReturn;
     }
 }
 
@@ -58,7 +108,7 @@ export function isSvelte5Plus(version: string | undefined): IsSvelte5Plus {
     return version.split('.')[0] >= '5';
 }
 
-export async function getSvelteVersionFromPackageJson(): Promise<string | undefined> {
+export async function getVersionFromPackageJson(packageName: string): Promise<string | undefined> {
     const packageJsonList = await workspace.findFiles('**/package.json', '**/node_modules/**');
 
     if (packageJsonList.length === 0) {
@@ -69,7 +119,8 @@ export async function getSvelteVersionFromPackageJson(): Promise<string | undefi
         try {
             const text = new TextDecoder().decode(await workspace.fs.readFile(fileUri));
             const pkg = JSON.parse(text);
-            const svelteVersion = pkg.devDependencies?.svelte ?? pkg.dependencies?.svelte;
+            const svelteVersion =
+                pkg.devDependencies?.[packageName] ?? pkg.dependencies?.[packageName];
 
             if (svelteVersion !== undefined) {
                 return svelteVersion;

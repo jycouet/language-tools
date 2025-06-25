@@ -33,12 +33,15 @@ export type Resource = {
 };
 
 export enum ProjectType {
+    TS_SV5_PROPS = 'ts-sv5-props',
+    TS_SATISFIES_SV5_PROPS = 'ts-satisfies-sv5-props',
+    JS_SV5_PROPS = 'js-sv5-props',
     TS_SV5 = 'ts-sv5',
-    JS_SV5 = 'js-sv5',
     TS_SATISFIES_SV5 = 'ts-satisfies-sv5',
+    JS_SV5 = 'js-sv5',
     TS = 'ts',
-    JS = 'js',
-    TS_SATISFIES = 'ts-satisfies'
+    TS_SATISFIES = 'ts-satisfies',
+    JS = 'js'
 }
 
 export type IsSvelte5Plus = boolean;

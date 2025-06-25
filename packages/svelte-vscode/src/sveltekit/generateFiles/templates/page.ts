@@ -30,7 +30,25 @@ const jsSv5ScriptTemplate = `
 </script>
 `;
 
+const tsSv5ScriptTemplateProps = `
+<script lang="ts">
+    import type { PageProps } from './$types';
+
+    let { data }: PageProps = $props();
+</script>
+`;
+
+const jsSv5ScriptTemplateProps = `
+<script>
+    /** @type {import('./$types').PageProps} */
+    let { data } = $props();
+</script>
+`;
+
 const scriptTemplate: ReadonlyMap<ProjectType, string> = new Map([
+    [ProjectType.TS_SV5_PROPS, tsSv5ScriptTemplateProps],
+    [ProjectType.TS_SATISFIES_SV5_PROPS, tsSv5ScriptTemplateProps],
+    [ProjectType.JS_SV5_PROPS, jsSv5ScriptTemplateProps],
     [ProjectType.TS_SV5, tsSv5ScriptTemplate],
     [ProjectType.TS_SATISFIES_SV5, tsSv5ScriptTemplate],
     [ProjectType.JS_SV5, jsSv5ScriptTemplate],
