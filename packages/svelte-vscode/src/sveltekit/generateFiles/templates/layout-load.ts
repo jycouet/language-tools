@@ -24,6 +24,9 @@ export const load = (async () => {
 `;
 
 const scriptTemplate: ReadonlyMap<ProjectType, string> = new Map([
+    [ProjectType.TS_SV5_PROPS, tsScriptTemplate],
+    [ProjectType.TS_SATISFIES_SV5_PROPS, tsSatisfiesScriptTemplate],
+    [ProjectType.JS_SV5_PROPS, defaultScriptTemplate],
     [ProjectType.TS_SV5, tsScriptTemplate],
     [ProjectType.TS_SATISFIES_SV5, tsSatisfiesScriptTemplate],
     [ProjectType.JS_SV5, defaultScriptTemplate],

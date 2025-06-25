@@ -16,6 +16,9 @@ export const GET: RequestHandler = async () => {
 `;
 
 const scriptTemplate: ReadonlyMap<ProjectType, string> = new Map([
+    [ProjectType.TS_SV5_PROPS, tsScriptTemplate],
+    [ProjectType.TS_SATISFIES_SV5_PROPS, tsScriptTemplate],
+    [ProjectType.JS_SV5_PROPS, defaultScriptTemplate],
     [ProjectType.TS_SV5, tsScriptTemplate],
     [ProjectType.TS_SATISFIES_SV5, tsScriptTemplate],
     [ProjectType.JS_SV5, defaultScriptTemplate],
